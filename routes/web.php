@@ -36,13 +36,15 @@ Route::get('/', function () {
     return redirect()->route('auth.login');
 });
 
-Route::get('/healthz', function () {
+$healthHandler = function () {
     return response()->json([
         'status' => 'ok',
         'service' => 'backend',
         'timestamp' => now()->toIso8601String(),
     ]);
-})->name('healthz');
+};
+Route::get('/health',  $healthHandler)->name('health');
+Route::get('/healthz', $healthHandler)->name('healthz');
 
 // Authentication routes (legacy URL compatibility)
 Route::get('/login.php', [AuthController::class, 'showLoginForm'])->name('auth.login');

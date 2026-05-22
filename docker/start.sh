@@ -1,46 +1,47 @@
 #!/bin/sh
-# Container entrypoint for the VRS Laravel backend.
-set -e
-
+# Container entrypoint — Apache ALWAYS starts, even if artisan fails.
 cd /var/www/html
 
 # ── 1. Permissions ────────────────────────────────────────────────────────────
-chown -R www-data:www-data storage bootstrap/cache || true
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
-# ── 2. Require APP_KEY ────────────────────────────────────────────────────────
+# ── 2. Warn if APP_KEY missing (do not exit — let Laravel show the error) ─────
 if [ -z "${APP_KEY:-}" ]; then
-    echo "FATAL: APP_KEY is not set. Generate one with: php artisan key:generate"
-    exit 1
+    echo "WARNING: APP_KEY is not set. Run: php artisan key:generate"
 fi
 
-# ── 3. Wait for the database (max 60 s) ───────────────────────────────────────
+# ── 3. Clear stale caches from previous build ─────────────────────────────────
+php artisan optimize:clear --quiet 2>/dev/null || true
+
+# ── 4. Wait for DB (up to 30 s), then migrate ────────────────────────────────
 DB_HOST="${DB_HOST:-db}"
 DB_PORT="${DB_PORT:-3306}"
-echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
 WAIT=0
-until php -r "new PDO('mysql:host=${DB_HOST};port=${DB_PORT}', '${DB_USERNAME:-root}', '${DB_PASSWORD:-}');" 2>/dev/null; do
-    if [ "$WAIT" -ge 60 ]; then
-        echo "WARNING: database not reachable after 60 s — starting without migrations."
+DB_READY=0
+echo "Checking database ${DB_HOST}:${DB_PORT}..."
+while [ "$WAIT" -lt 30 ]; do
+    if php -r "exit(@fsockopen('${DB_HOST}', ${DB_PORT}) ? 0 : 1);" 2>/dev/null; then
+        DB_READY=1
         break
     fi
     sleep 2
     WAIT=$((WAIT + 2))
 done
 
-# ── 4. Clear stale bootstrap caches ──────────────────────────────────────────
-php artisan optimize:clear --quiet || true
-
-# ── 5. Run migrations (non-fatal — app starts even if this fails) ─────────────
-echo "Running migrations..."
-php artisan migrate --force --no-interaction || echo "WARNING: migrate failed — check DB credentials / connectivity."
-
-# ── 6. Build production caches ───────────────────────────────────────────────
-if [ "${APP_ENV:-production}" = "production" ]; then
-    echo "Caching config, routes and views..."
-    php artisan config:cache || { echo "ERROR: config:cache failed"; exit 1; }
-    php artisan route:cache  || { echo "ERROR: route:cache failed";  exit 1; }
-    php artisan view:cache   || true
+if [ "$DB_READY" = "1" ]; then
+    echo "Database reachable. Running migrations..."
+    php artisan migrate --force --no-interaction 2>&1 || echo "WARNING: migrate failed"
+else
+    echo "WARNING: database not reachable after ${WAIT}s — skipping migrations"
 fi
 
-echo "Backend ready."
+# ── 5. Build caches (non-fatal — stale cache is better than no container) ─────
+if [ "${APP_ENV:-production}" = "production" ]; then
+    echo "Building caches..."
+    php artisan config:cache 2>&1 || echo "WARNING: config:cache failed"
+    php artisan route:cache  2>&1 || echo "WARNING: route:cache failed"
+    php artisan view:cache   2>&1 || echo "WARNING: view:cache failed"
+fi
+
+echo "Starting Apache..."
 exec apache2-foreground

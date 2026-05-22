@@ -7,6 +7,7 @@ use App\Models\Applicant;
 use App\Models\AuthorizedDriver;
 use App\Models\SearchLog;
 use App\Models\UnregisteredPlate;
+use App\Repositories\VehicleRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;

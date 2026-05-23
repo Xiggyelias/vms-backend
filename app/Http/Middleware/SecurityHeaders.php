@@ -22,7 +22,9 @@ class SecurityHeaders
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), geolocation=(), microphone=()');
-        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+        // same-origin-allow-popups: allows Google OAuth popup to postMessage back to opener,
+        // while still isolating the page from unrelated cross-origin popups.
+        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
         $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
         $response->headers->set('X-Download-Options', 'noopen');

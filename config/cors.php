@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'auth/*'],
+    'paths' => ['api/*', 'auth/*', 'google_auth.php', 'finalize_role.php'],
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 

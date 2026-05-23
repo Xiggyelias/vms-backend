@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Applicant;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
@@ -67,20 +66,18 @@ class GoogleAuthController extends Controller
                 return redirect($frontendUrl . '/login.php?error=suspended');
             }
 
-            session([
-                'user_id'      => $user->applicant_id,
-                'user_email'   => $user->email,
-                'user_name'    => $user->fullName,
-                'user_type'    => $user->registrantType,
-                'user_college' => $user->college,
-                'logged_in'    => true,
-                'login_time'   => time(),
+            // Build a short-lived HMAC token so auth-establish.php on the frontend
+            // can set the PHP session without sharing a session store with Laravel.
+            $authToken = $this->buildAuthToken([
+                'uid'     => (int) $user->applicant_id,
+                'email'   => $user->email,
+                'name'    => $user->fullName,
+                'type'    => $user->registrantType,
+                'college' => (string) ($user->college ?? ''),
             ]);
 
-            Auth::guard('web')->login($user);
-
             $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
-            return redirect($frontendUrl . '/user-dashboard.php');
+            return redirect($frontendUrl . '/auth-establish.php?token=' . urlencode($authToken));
 
         } catch (\Throwable $e) {
             Log::error('Google OAuth callback failed', [

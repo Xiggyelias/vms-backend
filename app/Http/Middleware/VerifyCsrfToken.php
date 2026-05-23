@@ -12,12 +12,13 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        // These endpoints are called by the frontend JavaScript (potentially from a
-        // different domain) using a Google ID token as their own form of authentication.
-        // CSRF protection is handled by verifying the Google token server-side instead.
+        // These endpoints are called by the frontend JavaScript using their own
+        // authentication mechanism (Google token or HMAC token), so CSRF is not needed.
         'google_auth.php',
         'finalize_role.php',
+        'auth-sync.php',
         '/google_auth.php',
         '/finalize_role.php',
+        '/auth-sync.php',
     ];
 }

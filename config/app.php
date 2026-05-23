@@ -57,6 +57,9 @@ return [
     // ── VRS domain settings ────────────────────────────────────────────────
     'allowed_google_domain' => env('ALLOWED_GOOGLE_DOMAIN', 'africau.edu'),
     'frontend_url'          => env('FRONTEND_URL', 'https://vehicle.africau.co.zw'),
+    // Shared secret used to sign short-lived auth tokens that the backend issues
+    // and the frontend verifies to establish a PHP session after Google OAuth.
+    'auth_shared_secret'    => env('AUTH_SHARED_SECRET', ''),
 
     // ── Vehicle registration settings ──────────────────────────────────────
     'vehicle_registration_expiry_days' => (int) env('VEHICLE_REGISTRATION_EXPIRY_DAYS', 365),

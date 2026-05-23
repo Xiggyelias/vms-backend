@@ -49,7 +49,7 @@ class AuthController extends Controller
                 ], 'Login successful.');
             }
 
-            return redirect()->route('dashboard.user')->with('success', 'Login successful.');
+            return redirect(rtrim((string) config('app.frontend_url'), '/') . '/user-dashboard.php');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson()) {
                 return $this->fail('Login failed.', 422, ['errors' => $e->errors()]);
@@ -76,7 +76,7 @@ class AuthController extends Controller
                 ], 'Admin login successful.');
             }
 
-            return redirect()->route('dashboard.admin')->with('success', 'Admin login successful.');
+            return redirect(rtrim((string) config('app.frontend_url'), '/') . '/admin-dashboard.php');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson()) {
                 return $this->fail('Admin login failed.', 422, ['errors' => $e->errors()]);
@@ -92,7 +92,7 @@ class AuthController extends Controller
             return $this->ok([], 'Logged out successfully.');
         }
 
-        return redirect()->route('auth.login')->with('success', 'Logged out successfully.');
+        return redirect(rtrim((string) config('app.frontend_url'), '/') . '/login.php');
     }
 
     public function adminLogout(Request $request): RedirectResponse|JsonResponse
@@ -102,6 +102,6 @@ class AuthController extends Controller
             return $this->ok([], 'Admin logged out successfully.');
         }
 
-        return redirect()->route('auth.admin.login')->with('success', 'Admin logged out successfully.');
+        return redirect(rtrim((string) config('app.frontend_url'), '/') . '/admin-login.php');
     }
 }

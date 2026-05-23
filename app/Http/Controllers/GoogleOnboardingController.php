@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Applicant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -87,20 +88,30 @@ class GoogleOnboardingController extends Controller
 
         session()->regenerate();
         session([
-            'user_id' => $user->applicant_id,
-            'user_email' => $email,
-            'user_name' => $user->fullName,
-            'user_type' => $type,
-            'logged_in' => true,
-            'login_time' => time(),
+            'user_id'      => $user->applicant_id,
+            'user_email'   => $email,
+            'user_name'    => $user->fullName,
+            'user_type'    => $type,
+            'user_college' => (string) ($user->college ?? ''),
+            'logged_in'    => true,
+            'login_time'   => time(),
+        ]);
+
+        $authToken = $this->buildAuthToken([
+            'uid'     => (int) $user->applicant_id,
+            'email'   => $email,
+            'name'    => $user->fullName,
+            'type'    => $type,
+            'college' => (string) ($user->college ?? ''),
         ]);
 
         return $this->ok([
-            'redirect' => 'user-dashboard.php',
-            'user_info' => [
-                'id' => (int) $user->applicant_id,
-                'name' => $user->fullName,
-                'email' => $email,
+            'redirect'   => 'user-dashboard.php',
+            'auth_token' => $authToken,
+            'user_info'  => [
+                'id'              => (int) $user->applicant_id,
+                'name'            => $user->fullName,
+                'email'           => $email,
                 'registrant_type' => $type,
             ],
         ], 'Login successful.');
@@ -147,24 +158,70 @@ class GoogleOnboardingController extends Controller
 
         session()->regenerate();
         session([
-            'user_id' => $user->applicant_id,
-            'user_email' => $user->email,
-            'user_name' => $user->fullName,
-            'user_type' => $user->registrantType,
-            'logged_in' => true,
-            'login_time' => time(),
+            'user_id'      => $user->applicant_id,
+            'user_email'   => $user->email,
+            'user_name'    => $user->fullName,
+            'user_type'    => $user->registrantType,
+            'user_college' => (string) ($user->college ?? ''),
+            'logged_in'    => true,
+            'login_time'   => time(),
         ]);
         session()->forget('pending_oauth.' . $tempUserId);
 
+        $authToken = $this->buildAuthToken([
+            'uid'     => (int) $user->applicant_id,
+            'email'   => $user->email,
+            'name'    => $user->fullName,
+            'type'    => $user->registrantType,
+            'college' => (string) ($user->college ?? ''),
+        ]);
+
         return $this->ok([
-            'status' => 'success',
-            'role' => $user->registrantType,
-            'redirect' => 'user-dashboard.php',
-            'user' => [
-                'id' => (int) $user->applicant_id,
+            'status'     => 'success',
+            'role'       => $user->registrantType,
+            'redirect'   => 'user-dashboard.php',
+            'auth_token' => $authToken,
+            'user'       => [
+                'id'    => (int) $user->applicant_id,
                 'email' => $user->email,
-                'name' => $user->fullName,
+                'name'  => $user->fullName,
             ],
         ], 'Role finalized.');
+    }
+
+    /**
+     * Establish a Laravel session from a short-lived auth token.
+     * Called by auth-establish.php via the same-origin proxy so the session
+     * cookie is scoped to the frontend domain (vehicle.africau.co.zw).
+     */
+    public function authSync(Request $request): JsonResponse
+    {
+        $token = (string) $request->input('token', '');
+        if ($token === '') {
+            return $this->fail('Missing token', 400);
+        }
+
+        $claims = $this->verifyAuthToken($token);
+        if ($claims === null) {
+            return $this->fail('Invalid or expired token', 401);
+        }
+
+        $uid = (int) ($claims['uid'] ?? 0);
+        if ($uid <= 0) {
+            return $this->fail('Invalid token claims', 401);
+        }
+
+        session()->regenerate();
+        session([
+            'user_id'      => $uid,
+            'user_email'   => $claims['email'] ?? '',
+            'user_name'    => $claims['name'] ?? '',
+            'user_type'    => $claims['type'] ?? '',
+            'user_college' => $claims['college'] ?? '',
+            'logged_in'    => true,
+            'login_time'   => time(),
+        ]);
+
+        return $this->ok([], 'Session established.');
     }
 }

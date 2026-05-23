@@ -49,7 +49,8 @@ class GoogleOnboardingController extends Controller
             $user = Applicant::create([
                 'fullName' => $fullName ?: 'Unknown User',
                 'email' => $email,
-                'registrantType' => 'pending',
+                // Use an allowed enum value, then force explicit role setup below.
+                'registrantType' => 'guest',
                 'password' => Hash::make(Str::random(32)),
                 'phone' => '',
                 'college' => '',
@@ -167,4 +168,3 @@ class GoogleOnboardingController extends Controller
         ], 'Role finalized.');
     }
 }
-

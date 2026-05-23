@@ -36,16 +36,6 @@ Route::get('/', function () {
     return redirect()->route('auth.login');
 });
 
-$healthHandler = function () {
-    return response()->json([
-        'status' => 'ok',
-        'service' => 'backend',
-        'timestamp' => now()->toIso8601String(),
-    ]);
-};
-Route::get('/health',  $healthHandler)->name('health');
-Route::get('/healthz', $healthHandler)->name('healthz');
-
 // Authentication routes (legacy URL compatibility)
 Route::get('/login.php', [AuthController::class, 'showLoginForm'])->name('auth.login');
 Route::post('/login.php', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login.post');
@@ -82,7 +72,7 @@ Route::middleware(['auth.user'])->group(function () {
     Route::post('/update_vehicle.php', [VehicleController::class, 'update'])->middleware('throttle:mutations')->name('vehicles.update.post');
     Route::post('/delete_vehicle.php', [VehicleController::class, 'destroy'])->middleware('throttle:mutations')->name('vehicles.destroy.post');
     Route::post('/vehicle_operations.php', [VehicleController::class, 'update'])->middleware('throttle:mutations')->name('vehicles.operations.update');
-    Route::delete('/vehicle_operations.php', [VehicleController::class, 'destroy'])->middleware('throttle:mutations')->name('vehicles.destroy');
+    Route::delete('/vehicle_operations.php', [VehicleController::class, 'destroy'])->middleware('throttle:mutations')->name('vehicles.destroy.legacy');
     Route::post('/update-owner-info.php', [OwnerController::class, 'update'])->middleware('throttle:mutations')->name('owners.update.self');
     Route::post('/save_registration_draft.php', [RegistrationDraftController::class, 'save'])->middleware('throttle:mutations')->name('drafts.save');
     Route::post('/submit_registration.php', [RegistrationSubmissionController::class, 'submit'])->middleware('throttle:mutations')->name('registration.submit');

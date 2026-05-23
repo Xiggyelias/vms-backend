@@ -56,6 +56,11 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         $this->routes(function () {
+            // Health check — no web/api middleware, no sessions, no CSRF.
+            // Must always respond 200 even if session storage or cookies fail.
+            Route::get('/health',  fn () => response()->json(['status' => 'ok', 'service' => 'backend', 'timestamp' => now()->toIso8601String()]))->name('health');
+            Route::get('/healthz', fn () => response()->json(['status' => 'ok', 'service' => 'backend', 'timestamp' => now()->toIso8601String()]))->name('healthz');
+
             Route::middleware('api')
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));

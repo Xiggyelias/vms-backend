@@ -43,5 +43,14 @@ if [ "${APP_ENV:-production}" = "production" ]; then
     php artisan view:cache   2>&1 || echo "WARNING: view:cache failed"
 fi
 
+# ── 6. Verify Laravel can bootstrap before handing off to Apache ─────────────
+echo "Verifying Laravel bootstrap..."
+php -r "
+require 'vendor/autoload.php';
+\$app = require 'bootstrap/app.php';
+\$kernel = \$app->make(Illuminate\Contracts\Http\Kernel::class);
+echo 'PHP ' . PHP_VERSION . ' — Laravel bootstrap OK' . PHP_EOL;
+" 2>&1 || echo "WARNING: Laravel bootstrap check failed — Apache will start anyway"
+
 echo "Starting Apache..."
 exec apache2-foreground

@@ -68,6 +68,7 @@ class GoogleOnboardingController extends Controller
                     'licenseNumber'  => '',
                     'licenseClass'   => '',
                     'licenseDate'    => now(),
+                    'studentRegNo'   => $this->generateUniqueStudentRegNo(),
                 ]);
             }
         } catch (\Throwable $e) {
@@ -132,6 +133,15 @@ class GoogleOnboardingController extends Controller
                 'registrant_type' => $type,
             ],
         ], 'Login successful.');
+    }
+
+    private function generateUniqueStudentRegNo(): string
+    {
+        do {
+            $regNo = 'G' . str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        } while (Applicant::where('studentRegNo', $regNo)->exists());
+
+        return $regNo;
     }
 
     public function finalizeRole(Request $request): JsonResponse

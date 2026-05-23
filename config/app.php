@@ -59,7 +59,10 @@ return [
     'frontend_url'          => env('FRONTEND_URL', 'https://vehicle.africau.co.zw'),
     // Shared secret used to sign short-lived auth tokens that the backend issues
     // and the frontend verifies to establish a PHP session after Google OAuth.
-    'auth_shared_secret'    => env('AUTH_SHARED_SECRET', ''),
+    // Falls back to a value derived from DB credentials (same on both containers)
+    // so auth works out-of-the-box even when AUTH_SHARED_SECRET is not set.
+    'auth_shared_secret' => env('AUTH_SHARED_SECRET')
+        ?: hash('sha256', env('DB_PASSWORD', '') . '|vms-auth|' . (env('DB_DATABASE') ?: env('DB_NAME', 'vehicleregistrationsystem'))),
 
     // ── Vehicle registration settings ──────────────────────────────────────
     'vehicle_registration_expiry_days' => (int) env('VEHICLE_REGISTRATION_EXPIRY_DAYS', 365),

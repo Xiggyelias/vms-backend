@@ -86,7 +86,7 @@ Route::middleware(['auth.user'])->group(function () {
     Route::post('/mark_notification_read.php',   [NotificationController::class, 'markRead'])->middleware('throttle:mutations')->name('notifications.read.payload');
     Route::post('/mark_notification_read.php/{id}', [NotificationController::class, 'markRead'])->middleware('throttle:mutations')->name('notifications.read');
 
-    Route::resource('vehicles', VehicleController::class)->except(['create', 'store', 'index', 'show']);
+    Route::resource('vehicles', VehicleController::class)->except(['create', 'store', 'index', 'show', 'destroy']);
     Route::post('/vehicles/{id}/renew', [VehicleController::class, 'renew'])->middleware('throttle:mutations')->name('vehicles.renew');
 });
 

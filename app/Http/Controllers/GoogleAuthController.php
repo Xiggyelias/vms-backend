@@ -36,8 +36,8 @@ class GoogleAuthController extends Controller
                 $allowed     = config('app.allowed_google_domain', 'africau.edu');
 
                 if ($emailDomain !== $allowed) {
-                    return redirect()->route('auth.login')
-                        ->with('error', 'Please use your university email address.');
+                    $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+                    return redirect($frontendUrl . '/login.php?error=domain_not_allowed');
                 }
 
                 $user = Applicant::create([
@@ -57,14 +57,14 @@ class GoogleAuthController extends Controller
                 ]);
             }
 
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+
             if (!in_array($user->registrantType, ['student', 'staff'], true)) {
-                return redirect()->route('auth.login')
-                    ->with('error', 'Google login is only available for students and staff.');
+                return redirect($frontendUrl . '/login.php?error=invalid_role');
             }
 
             if (($user->status ?? 'active') === 'suspended') {
-                return redirect()->route('auth.login')
-                    ->with('error', 'Your account has been suspended. Please contact the administrator.');
+                return redirect($frontendUrl . '/login.php?error=suspended');
             }
 
             session([
@@ -79,8 +79,8 @@ class GoogleAuthController extends Controller
 
             Auth::guard('web')->login($user);
 
-            return redirect()->route('dashboard.user')
-                ->with('success', 'Logged in successfully with Google.');
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+            return redirect($frontendUrl . '/user-dashboard.php');
 
         } catch (\Throwable $e) {
             Log::error('Google OAuth callback failed', [
@@ -88,8 +88,8 @@ class GoogleAuthController extends Controller
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),
             ]);
-            return redirect()->route('auth.login')
-                ->with('error', 'Google login failed. Please try again or use your email and password.');
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+            return redirect($frontendUrl . '/login.php?error=google_failed');
         }
     }
 

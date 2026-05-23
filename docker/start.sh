@@ -5,9 +5,15 @@ cd /var/www/html
 # ── 1. Permissions ────────────────────────────────────────────────────────────
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
-# ── 2. Warn if APP_KEY missing (do not exit — let Laravel show the error) ─────
+# ── 2. Ensure APP_KEY is set (auto-generate ephemeral key if missing) ─────────
 if [ -z "${APP_KEY:-}" ]; then
-    echo "WARNING: APP_KEY is not set. Run: php artisan key:generate"
+    echo "WARNING: APP_KEY is not set — generating an ephemeral key for this boot."
+    echo "IMPORTANT: Set a stable APP_KEY in Dokploy env vars to prevent session"
+    echo "           invalidation on every container restart."
+    # Generate base64:... key without calling artisan (artisan needs APP_KEY to boot)
+    EPHEMERAL_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+    export APP_KEY="$EPHEMERAL_KEY"
+    echo "Ephemeral APP_KEY generated (export to env to make permanent)."
 fi
 
 # ── 3. Clear stale caches from previous build ─────────────────────────────────
